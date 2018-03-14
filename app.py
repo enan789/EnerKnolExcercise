@@ -18,8 +18,7 @@ class User(db.Model):
     email = db.Column('email', db.String(100), unique=True)
     password = db.Column('password', db.String(100), primary_key=False)
 
-    def __init__(self,id,first_name,last_name,username,email,password):
-        self.id = id
+    def __init__(self,first_name,last_name,username,email,password):
         self.first_name = first_name
         self.last_name = last_name
         self.username = username
@@ -53,11 +52,15 @@ class RegisterForm(Form):
 def register():
     form = RegisterForm(request.form)
     if request.method == 'POST' and form.validate():
-        db.session.add(form)
+        user = User(form.first_name.data,form.last_name.data,form.username.data,form.email.data,form.password.data)
+        db.session.add(user)
         db.session.commit()
+        db.session.close()
 
-        return render_template('register.html')
+        flash('You are now registered and can now login')
+        return redirect(url_for('index'))
     return render_template('register.html', form=form)
 
 if __name__ == '__main__':
+    app.secret_key='skeletonk!'
     app.run(debug=True)
