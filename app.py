@@ -1,4 +1,5 @@
 from flask import Flask, render_template, flash, redirect, request, url_for, session, logging
+from flask_pymongo import PyMongo
 from flask_sqlalchemy import SQLAlchemy
 from flask_mysqldb import MySQL
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators
@@ -8,6 +9,10 @@ from functools import wraps
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "mysql://root:wordpass@localhost/flaskapp"
 db = SQLAlchemy(app)
+
+app.config['MONGO_DBNAME'] = "items"
+app.config['MONGO_URI'] = "mongodb://testing:1234@ds149934.mlab.com:49934/items"
+mongo = PyMongo(app)
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -112,7 +117,9 @@ def logout():
 @app.route('/search')
 @is_logged_in
 def search():
-    return render_template('search.html')
+    itemsDB = mongo.db.EnerknolVals
+    items = itemsDB.find()
+    return render_template('search.html', items =items)
 
 if __name__ == '__main__':
     app.secret_key='skeletonk!'

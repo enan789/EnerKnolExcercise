@@ -4,6 +4,13 @@
 <h1> Search </h1>
 <p>
   <div>Welcome {{session.username}}</div>
+  <div>{{items.Length}} </div>
 </p>
+
+{% for item in items %}
+  <div class="border">
+    <p>{{item["name"]}}</p>
+  </div>
+{% endfor %}
 
 {% endblock %}
