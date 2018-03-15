@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_mysqldb import MySQL
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators
 from passlib.hash import sha256_crypt
-import sys
+from functools import wraps
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "mysql://root:wordpass@localhost/flaskapp"
@@ -93,6 +93,16 @@ def login():
             return render_template('login.html', error=error)
     return render_template('login.html')
 
+def is_logged_in(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        if 'logged_in' in session:
+            return f(*args,**kwargs)
+        else:
+            flash('Unauthorized, Please login', 'danger')
+            return redirect(url_for('login'))
+    return wrap
+
 @app.route('/logout')
 def logout():
     session.clear()
@@ -100,6 +110,7 @@ def logout():
     return redirect(url_for('login'))
 
 @app.route('/search')
+@is_logged_in
 def search():
     return render_template('search.html')
 
