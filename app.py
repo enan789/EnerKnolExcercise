@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_mysqldb import MySQL
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators
 from passlib.hash import sha256_crypt
+import sys
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "mysql://root:wordpass@localhost/flaskapp"
@@ -29,10 +30,11 @@ class User(db.Model):
         return '<User %r>' % self.username
 
 
-#new_user = User(1,'John', 'Doe', 'aDeer','aDeer@gmail.com', 'aFemaleDeer')
+#new_user = User('John', 'Doe', 'aDeer','aDeer@gmail.com', 'aFemaleDeer')
 #db.session.add(new_user);
 #db.session.commit();
 
+#The home page
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -48,6 +50,7 @@ class RegisterForm(Form):
     ])
     confirm = PasswordField('Confirm Password')
 
+#Register Route
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm(request.form)
@@ -60,6 +63,45 @@ def register():
         flash('You are now registered and can now login')
         return redirect(url_for('index'))
     return render_template('register.html', form=form)
+
+#Login Route
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        #get from forms
+        username = request.form['username']
+        password_candidate = request.form['password']
+        result = User.query.filter_by(username = username).first()
+
+        if result:
+            password = result.password
+            if sha256_crypt.verify(password_candidate, password):
+                session['logged_in'] = True
+                session['username'] = username
+
+                flash('You are now logged in', 'success')
+                print('suceeded')
+                return redirect(url_for('search'))
+            else:
+                error = 'Invalid login'
+                print('invalid password')
+                return render_template('login.html', error=error)
+            db.session.close()
+        else:
+            error = 'Username not found'
+            print('invalid password')
+            return render_template('login.html', error=error)
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('You are now logged out, error')
+    return redirect(url_for('login'))
+
+@app.route('/search')
+def search():
+    return render_template('search.html')
 
 if __name__ == '__main__':
     app.secret_key='skeletonk!'
