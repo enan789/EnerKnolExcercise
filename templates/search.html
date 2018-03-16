@@ -1,16 +1,29 @@
 {% extends 'layout.html' %}
 
 {% block body %}
+</br>
 <h1> Search </h1>
 <p>
   <div>Welcome {{session.username}}</div>
-  <div>{{items.Length}} </div>
+  <div>{{items.length}} </div>
 </p>
 
+
+<div class="input-group-btn">
+      <input class="form-control" type="text" placeholder="Search" class>
+</div>
+</br>
+
 {% for item in items %}
-  <div class="border">
-    <p>{{item["name"]}}</p>
-  </div>
+    <h3 class="list-group-item"><a target="blank" href="{{ url_for('item_page', val=item) }}">{{item["name"]}}</a></h3>
 {% endfor %}
+</br>
+
+<div>
+
+  <a class="btn btn-primary" href="/list/1" role="button">1</a>
+  <a class="btn btn-primary" href="/list/2" role="button">2</a>
+  <a class="btn btn-primary" href="/list/3" role="button">3</a>
+</div>
 
 {% endblock %}

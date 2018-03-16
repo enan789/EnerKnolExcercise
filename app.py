@@ -5,6 +5,8 @@ from flask_mysqldb import MySQL
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators
 from passlib.hash import sha256_crypt
 from functools import wraps
+from elasticsearch import Elasticsearch
+import json
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "mysql://root:wordpass@localhost/flaskapp"
@@ -13,6 +15,7 @@ db = SQLAlchemy(app)
 app.config['MONGO_DBNAME'] = "items"
 app.config['MONGO_URI'] = "mongodb://testing:1234@ds149934.mlab.com:49934/items"
 mongo = PyMongo(app)
+es = Elasticsearch('localhost:9200',use_ssl=False,verify_certs=True)
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -33,6 +36,15 @@ class User(db.Model):
 
     def __repr__(self):
         return '<User %r>' % self.username
+
+class Item():
+    _id = ''
+    name = ''
+    description = ''
+    def __init__(self,_id,name,description):
+        self._id = _id
+        self.name = name
+        self.description = description
 
 
 #new_user = User('John', 'Doe', 'aDeer','aDeer@gmail.com', 'aFemaleDeer')
@@ -86,7 +98,7 @@ def login():
 
                 flash('You are now logged in', 'success')
                 print('suceeded')
-                return redirect(url_for('search'))
+                return redirect('list/1')
             else:
                 error = 'Invalid login'
                 print('invalid password')
@@ -114,12 +126,33 @@ def logout():
     flash('You are now logged out, error')
     return redirect(url_for('login'))
 
-@app.route('/search')
+def paginate_data(array,page_size,page):
+    return array[page_size*(page-1):page_size*page]
+
+@app.route('/list/<int:page>')
 @is_logged_in
-def search():
+def search(page):
     itemsDB = mongo.db.EnerknolVals
     items = itemsDB.find()
-    return render_template('search.html', items =items)
+    page_size = 3;
+    itemsES = []
+    #for item in items:
+    #    itemsES.append({ '_id' : str(item['_id'].ObjectId()), 'name' : item['name'], 'description' : item["description"]})
+    #res = es.index(index="test-index", doc_type='document', id=1, body=itemsES)
+    #res = es.get(index="test-index", doc_type='document', id=1)
+
+    #es.indices.refresh(index="test-index")
+
+    #res = es.search(index="test-index", body={"query": {"match_all": {}}})
+    #print("Got %d Hits:" % res['hits']['total'],file=sys.stdout)
+    return render_template('search.html', items = paginate_data(items,page_size,page), page_size= page_size)
+    #return render_template('search.html', items = res['hits']['hits'])
+
+@app.route('/item_page')
+@is_logged_in
+def item_page():
+    val = request.args.get('val', None)
+    return render_template('item_page.html', val=val)
 
 if __name__ == '__main__':
     app.secret_key='skeletonk!'
