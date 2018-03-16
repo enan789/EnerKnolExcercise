@@ -67,6 +67,28 @@ class RegisterForm(Form):
     ])
     confirm = PasswordField('Confirm Password')
 
+def paginate_data(array,page_size,page):
+    return array[page_size*(page-1):page_size*page]
+
+def get_data():
+    itemsDB = mongo.db.EnerknolVals
+    items = itemsDB.find()
+    return items
+
+#Tried to input mongodb data into search but failed to do so
+def search(items):
+    itemsES = []
+    for item in items:
+        itemsES.append({ '_id' : str(item['_id'].ObjectId()), 'name' : item['name'], 'description' : item["description"]})
+        res = es.index(index="test-index", doc_type='document', id=1, body=itemsES)
+        res = es.get(index="test-index", doc_type='document', id=1)
+
+        es.indices.refresh(index="test-index")
+
+        res = es.search(index="test-index", body={"query": {"match_all": {}}})
+        print("Got %d Hits:" % res['hits']['total'],file=sys.stdout)
+        return render_template('search.html', items = res['hits']['hits'])
+
 #Register Route
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -126,27 +148,15 @@ def logout():
     flash('You are now logged out, error')
     return redirect(url_for('login'))
 
-def paginate_data(array,page_size,page):
-    return array[page_size*(page-1):page_size*page]
+
 
 @app.route('/list/<int:page>')
 @is_logged_in
 def search(page):
-    itemsDB = mongo.db.EnerknolVals
-    items = itemsDB.find()
-    page_size = 3;
-    itemsES = []
-    #for item in items:
-    #    itemsES.append({ '_id' : str(item['_id'].ObjectId()), 'name' : item['name'], 'description' : item["description"]})
-    #res = es.index(index="test-index", doc_type='document', id=1, body=itemsES)
-    #res = es.get(index="test-index", doc_type='document', id=1)
+    items = get_data()
+    page_size = 3
 
-    #es.indices.refresh(index="test-index")
-
-    #res = es.search(index="test-index", body={"query": {"match_all": {}}})
-    #print("Got %d Hits:" % res['hits']['total'],file=sys.stdout)
     return render_template('search.html', items = paginate_data(items,page_size,page), page_size= page_size)
-    #return render_template('search.html', items = res['hits']['hits'])
 
 @app.route('/item_page')
 @is_logged_in
